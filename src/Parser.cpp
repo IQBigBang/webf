@@ -1,5 +1,16 @@
 #include "Parser.h"
-#include "AST.h"
+#include "Lexer.h"
+#include "INode.h"
+// Nodes
+#include "BlockNode.hpp"
+#include "ElementNode.hpp"
+#include "ExprNode.hpp"
+#include "ListNode.hpp"
+#include "MemberAccessNode.hpp"
+#include "NumberNode.hpp"
+#include "StringNode.hpp"
+#include "VariableNode.hpp"
+#include "VardefNode.hpp"
 
 Parser::Parser(Lexer& l) : l(l)
 {
@@ -9,17 +20,18 @@ Parser::Parser(Lexer& l) : l(l)
 ExprNode* Parser::parse_expr()
 {
     this->l.expect(LPAREN);
-    INode* func = this->parse_object();
-    if (this->l.peek(EQUAL))
+    if (this->l.peek(NAME) && this->l.peekNext(EQUAL))
     {
+        VardefNode* varname = new VardefNode(this->l.eat());
         this->l.eat(); // EQUAL
         INode* val = this->parse_object();
         this->l.expect(RPAREN);
         auto args = new std::vector<INode*>();
-        args->push_back(func);
-        args->push_back(val);
-        return new ExprNode(new StringNode("set"), args);
+        args->push_back(varname);
+        args->push_back(val); 
+        return new ExprNode(new VariableNode("set"), args);
     }
+    INode* func = this->parse_object();
     auto args = new std::vector<INode*>();
     while (!this->l.peek(RPAREN))
     {
@@ -55,57 +67,63 @@ ListNode* Parser::parse_list()
 
 INode* Parser::parse_object()
 {
-    auto f = this->parse_factor();
-    if (this->l.peek(DOT)) {
+    auto a = this->parse_atom();
+    if (!this->l.peek(DOT)) return a; // No member access
+    std::vector<std::string> members; 
+    while (this->l.peek(DOT))
+    {
         this->l.eat(); // DOT
-        std::string methodName = this->l.expect(STRING);
-        return new InstanceAccessNode(f, methodName);
+        members.push_back(this->l.expect(NAME));
     }
-    return f;
+    INode* last = a;
+    while (members.size() != 0)
+    {
+        last = new MemberAccessNode(last, members[0]);
+        members.erase(members.begin());
+    }
+    return last;
 }
 
-INode* Parser::parse_factor()
+INode* Parser::parse_atom()
 {
+    if (this->l.peek(STRING)) return new StringNode(this->l.eat());
+    if (this->l.peek(NUMBER)) return new NumberNode(std::stod(this->l.eat()));
+    if (this->l.peek(NAME)) return new VariableNode(this->l.eat());
     if (this->l.peek(LBRACKET)) return this->parse_list();
     if (this->l.peek(LBRACE)) return this->parse_block();
-    if (this->l.peek(LPAREN)) {
-        if (this->l.peekNext(TAGSTART)) {
-            this->l.eat(); // LPAREN
-            auto el = this->parse_element();
-            this->l.expect(RPAREN);
-            return el;
-        }
-        return this->parse_expr();
-    }
+    if (this->l.peek(TAGSTART)) return this->parse_element();
     if (this->l.peek(DOLLAR)) {
-        this->l.eat(); // DOLLAR
-        auto args = new std::vector<INode*>();
-        args->push_back(new StringNode(this->l.expect(STRING)));
-        return new ExprNode(new StringNode("get"), args);
+        this->l.eat();
+        return new VardefNode(this->l.expect(NAME));
     }
-    return new StringNode(this->l.expect(STRING));
+    return this->parse_expr();
 }
 
 ElementNode* Parser::parse_element()
 {
     this->l.expect(TAGSTART);
-    std::string elname = this->l.expect(STRING);
+    std::string elname = this->l.expect(NAME);
     std::map<std::string, INode*>* attrs = new std::map<std::string, INode*>();
-    while (!this->l.peek(TAGEND) && !this->l.peek(TAGCLOSINGEND)) {
+    while (!this->l.peek(TAGEND) && !this->l.peek(CLOSINGTAGEND)) {
         std::pair<std::string, INode*>* attr = this->parse_attr();
         attrs->insert(*attr);
     }
-    if (this->l.peek(TAGCLOSINGEND)) {
-        this->l.eat(); // TAGCLOSINGEND
+    if (this->l.peek(CLOSINGTAGEND)) {
+        this->l.eat(); // CLOSINGTAGEND
         return new ElementNode(elname, attrs, new std::vector<ElementNode*>());
     }
     this->l.expect(TAGEND);
     auto children = new std::vector<ElementNode*>();
-    while (!this->l.peek(CLOSINGTAGSTART)) {
-        children->push_back(this->parse_elortext());
+    while (true) {
+        std::string r = this->l.readRawUntil('<');
+        if (r == "")
+        {
+            if (this->l.peek(CLOSINGTAGSTART)) break;
+            children->push_back(this->parse_element());
+        } else children->push_back(new TextNode(r));
     }
     this->l.expect(CLOSINGTAGSTART);
-    std::string closingTagName = this->l.expect(STRING);
+    std::string closingTagName = this->l.expect(NAME);
     if (closingTagName != elname) {
         std::cout << "Tag names are not equal" << std::endl;
         throw 113;
@@ -117,60 +135,8 @@ ElementNode* Parser::parse_element()
 std::pair<std::string, INode*>* Parser::parse_attr()
 {
     auto attr = new std::pair<std::string, INode*>();
-    attr->first = this->l.expect(STRING);
+    attr->first = this->l.expect(NAME);
     this->l.expect(EQUAL);
-    if (this->l.peek(STRING)) {
-        auto static_attr_value = this->l.eat(); // STRING
-        attr->second = new StringNode(static_attr_value);
-        return attr;
-    }
-    if (this->l.peek(DOLLAR)) {
-        this->l.eat(); // DOLLAR
-        if (this->l.peek(STRING)) {
-            // Exception: attr1 = $x is treated as attr1 = $(get x)
-            // Without this exception you'd have to write $$x which is unintuitive
-            auto args = new std::vector<INode*>();
-            args->push_back(new StringNode(this->l.eat()));
-            attr->second = new ExprNode(new StringNode("get"), args);
-            return attr;
-        }
-        attr->second = this->parse_object();
-        return attr;
-    }
-    this->l.expect(LBRACE);
-    auto lazy_expr = new std::vector<ExprNode*>();
-    lazy_expr->push_back(this->parse_expr());
-    this->l.expect(RBRACE);
-    attr->second = new BlockNode(lazy_expr);
+    attr->second = this->parse_object();
     return attr;
-}
-
-ElementNode* Parser::parse_elortext()
-{
-    if (this->l.peek(TAGSTART)) {
-        return this->parse_element();
-    }
-    auto textnodes = new std::vector<INode*>();
-    while (!this->l.peek(CLOSINGTAGSTART)) {
-        if (this->l.peek(DOLLAR)) {
-            this->l.eat(); // DOLLAR
-            if (this->l.peek(STRING)) {
-                auto args = new std::vector<INode*>();
-                args->push_back(new StringNode(this->l.eat()));
-                textnodes->push_back(new ExprNode(new StringNode("get"), args));
-            } else {
-                textnodes->push_back(this->parse_expr());
-            }
-        } else {
-            // Temporary solution: convert every special token back to text
-            // Better solution TODO: enable 'text mode' for lexer
-            // in text mode lexer would ignore all special chars except for dollar and tags
-           std::string str = this->l.eat();
-            while (!this->l.peek(DOLLAR) && !this->l.peek(TAGSTART) && !this->l.peek(CLOSINGTAGSTART)) { // Merge all strings together
-               str += " " + this->l.eat();
-            }
-            textnodes->push_back(new StringNode(str));
-        }
-    }
-    return new ElementNode(textnodes);
 }

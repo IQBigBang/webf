@@ -2,13 +2,15 @@
 #define LEXER_H
 
 #include <string> // string
-#include <cctype> // isspace
+#include <cctype> // isspace, isdigit
 #include <map> // map
 #include <iostream> // cout endl
 
 enum TType
 {
+    NAME,
     STRING,
+    NUMBER,
     LPAREN, // (
     RPAREN, // )
     LBRACKET, // [
@@ -20,7 +22,7 @@ enum TType
     EQUAL, // =
     TAGSTART, // <
     TAGEND, // >
-    TAGCLOSINGEND, // />
+    CLOSINGTAGEND, // />
     CLOSINGTAGSTART, // </
     Eof // ALL-CAPS EOF is a macro
 };
@@ -42,6 +44,7 @@ public:
     bool peekNext(TType expected_type);
     std::string eat();
     std::string expect(TType expected_type);
+    std::string readRawUntil(char c); // works only in raw mode
 
     // TODO: Change this macro definition, it prevents CodeBlocks from correctly parsing public / private
 #ifndef WEBF_TESTING // WEBF_TESTING makes all members public for debugging purposes

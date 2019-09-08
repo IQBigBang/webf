@@ -2,7 +2,7 @@
 #define WEBF_TYPE_H
 
 
-class IWebF_Type
+class WebF_Type
 {};
 
 #endif // WEBF_TYPE_H

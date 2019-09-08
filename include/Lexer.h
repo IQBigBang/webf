@@ -5,9 +5,8 @@
 #include <cctype> // isspace
 #include <map> // map
 #include <iostream> // cout endl
-#include "catch.hpp"
 
-enum TokenType
+enum TType
 {
     STRING,
     LPAREN, // (
@@ -29,7 +28,7 @@ enum TokenType
 struct Token
 {
     bool isEmpty;
-    TokenType ttype;
+    TType ttype;
     std::string tval;
 };
 
@@ -39,10 +38,10 @@ class Lexer
 public:
     Lexer(std::string code);
     virtual ~Lexer();
-    bool peek(TokenType expected_type);
-    bool peekNext(TokenType expected_type);
+    bool peek(TType expected_type);
+    bool peekNext(TType expected_type);
     std::string eat();
-    std::string expect(TokenType expected_type);
+    std::string expect(TType expected_type);
 
     // TODO: Change this macro definition, it prevents CodeBlocks from correctly parsing public / private
 #ifndef WEBF_TESTING // WEBF_TESTING makes all members public for debugging purposes
@@ -60,7 +59,7 @@ private:
     Token afterCurrentT;
 
     // for simplicity
-    std::map<char, TokenType> oneCharTokens;
+    std::map<char, TType> oneCharTokens;
     std::string nameTerminatingChars = "()[]{}.<>$= /\t\n\x01";
 
     /**

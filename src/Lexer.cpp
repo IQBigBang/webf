@@ -112,13 +112,13 @@ Token Lexer::next()
     return Token {isEmpty: false, ttype: STRING, tval: s};
 }
 
-bool Lexer::peek(TokenType expected_type)
+bool Lexer::peek(TType expected_type)
 {
     if (this->currentT.isEmpty) this->currentT = next();
     return this->currentT.ttype == expected_type;
 }
 
-bool Lexer::peekNext(TokenType expected_type)
+bool Lexer::peekNext(TType expected_type)
 {
     if (this->afterCurrentT.isEmpty) {
         if (this->currentT.isEmpty) {
@@ -144,7 +144,7 @@ std::string Lexer::eat()
     return token_text;
 }
 
-std::string Lexer::expect(TokenType expected_type)
+std::string Lexer::expect(TType expected_type)
 {
     if (!this->peek(expected_type)) {
         std::cout << "Unexpected token at " << this->lineno << ", " << this->linepos << std::endl;

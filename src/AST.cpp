@@ -1,7 +1,7 @@
 #include "AST.h"
 
 StringNode::StringNode(std::string s) : s(s) {}
-WebF_Type* StringNode::execute(Runtime& r)
+IWebF_Type* StringNode::execute(Runtime& r)
 {
     // TODO
 }
@@ -15,7 +15,7 @@ std::string StringNode::repr()
 }
 
 ExprNode::ExprNode(INode* func, std::vector<INode*> *args) : func(func), args(args) {}
-WebF_Type* ExprNode::execute(Runtime& r)
+IWebF_Type* ExprNode::execute(Runtime& r)
 {
     // TODO
 }
@@ -34,7 +34,7 @@ std::string ExprNode::repr()
 }
 
 ListNode::ListNode(std::vector<INode*> *contents) : contents(contents) {}
-WebF_Type* ListNode::execute(Runtime& r)
+IWebF_Type* ListNode::execute(Runtime& r)
 {
     // TODO
 }
@@ -53,7 +53,7 @@ std::string ListNode::repr()
 }
 
 BlockNode::BlockNode(std::vector<ExprNode*> *contents) : contents(contents) {}
-WebF_Type* BlockNode::execute(Runtime& r)
+IWebF_Type* BlockNode::execute(Runtime& r)
 {
     // TODO
 }
@@ -78,7 +78,7 @@ ElementNode::ElementNode(std::vector<INode*> *textnodes) : textnodes(textnodes)
 {
     this->elname = "$txt"; // Syntactically impossible element name
 }
-WebF_Type* ElementNode::execute(Runtime& r)
+IWebF_Type* ElementNode::execute(Runtime& r)
 {
     // TODO
 }
@@ -112,7 +112,7 @@ std::string ElementNode::repr()
 }
 
 InstanceAccessNode::InstanceAccessNode(INode* object, std::string methodName) : object(object), methodName(methodName) {}
-WebF_Type* InstanceAccessNode::execute(Runtime& r) {}
+IWebF_Type* InstanceAccessNode::execute(Runtime& r) {}
 std::string InstanceAccessNode::repr()
 {
     std::stringstream ss;

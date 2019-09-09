@@ -11,15 +11,16 @@
 class INode
 {
 public:
-    virtual WebF_Type* execute(Runtime& r) = 0;
+    virtual IWebF_Type* execute(Runtime& r) = 0;
     virtual std::string repr() = 0;
+    virtual ~INode() {}
 };
 
 class StringNode : public INode
 {
 public:
     StringNode(std::string s);
-    WebF_Type* execute(Runtime& r);
+    IWebF_Type* execute(Runtime& r);
     std::string repr();
 private:
     std::string s;
@@ -29,8 +30,9 @@ class ExprNode : public INode
 {
 public:
     ExprNode(INode* func, std::vector<INode*> *args);
-    WebF_Type* execute(Runtime& r);
+    IWebF_Type* execute(Runtime& r);
     std::string repr();
+    virtual ~ExprNode() {delete this->func; delete this->args;}
 private:
     INode* func;
     std::vector<INode*> *args;
@@ -40,8 +42,9 @@ class ListNode : public INode
 {
 public:
     ListNode(std::vector<INode*> *contents);
-    WebF_Type* execute(Runtime& r);
+    IWebF_Type* execute(Runtime& r);
     std::string repr();
+    virtual ~ListNode() {delete this->contents;}
 private:
     std::vector<INode*> *contents;
 };
@@ -50,8 +53,9 @@ class BlockNode : public INode
 {
 public:
     BlockNode(std::vector<ExprNode*> *contents);
-    WebF_Type* execute(Runtime& r);
+    IWebF_Type* execute(Runtime& r);
     std::string repr();
+    virtual ~BlockNode() {delete this->contents;}
 private:
     std::vector<ExprNode*> *contents;
 };
@@ -61,8 +65,9 @@ class ElementNode : public INode
 public:
     ElementNode(std::string elname, std::map<std::string, INode*> *attributes, std::vector<ElementNode*> *children);
     ElementNode(std::vector<INode*> *textnodes); // Text node
-    WebF_Type* execute(Runtime& r);
+    IWebF_Type* execute(Runtime& r);
     std::string repr();
+    virtual ~ElementNode() {delete this->attributes; delete this->children; delete this->textnodes;}
 private:
     std::string elname;
     std::map<std::string, INode*> *attributes;
@@ -74,8 +79,9 @@ class InstanceAccessNode : public INode
 {
 public:
     InstanceAccessNode(INode* object, std::string methodName);
-    WebF_Type* execute(Runtime& r);
+    IWebF_Type* execute(Runtime& r);
     std::string repr();
+    virtual ~InstanceAccessNode() {delete this->object;}
 private:
     INode* object;
     std::string methodName;

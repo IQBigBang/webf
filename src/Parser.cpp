@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include "AST.h"
+#include "ExceptionHandler.h"
 
 Parser::Parser(Lexer& l) : l(l)
 {
@@ -107,8 +108,7 @@ ElementNode* Parser::parse_element()
     this->l.expect(CLOSINGTAGSTART);
     std::string closingTagName = this->l.expect(STRING);
     if (closingTagName != elname) {
-        std::cout << "Tag names are not equal" << std::endl;
-        throw 113;
+        ExceptionHandler::throwException(ExceptionType::TagNamesNotEqual);
     }
     this->l.expect(TAGEND);
     return new ElementNode(elname, attrs, children);

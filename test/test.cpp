@@ -6,6 +6,8 @@
 #include "Parser.h"
 #include "WebF_Type.h"
 #include "Runtime.h"
+#include "WebF_String.hpp"
+#include "WebF_Number.hpp"
 #include <iostream>
 
 TEST_CASE ("Lexer reads characters", "[lexer]")
@@ -161,6 +163,7 @@ TEST_CASE ("Parser parsing simple expressions", "[parser]")
     Parser p(l);
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "func( name = str(print), arg0 = str(a),  )");
+    delete e;
 }
 
 TEST_CASE ("Parser parsing simple lists and blocks", "[parser]")
@@ -169,6 +172,7 @@ TEST_CASE ("Parser parsing simple lists and blocks", "[parser]")
     Parser p(l);
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "func( name = str(def), arg0 = str(add), arg1 = list( 0 = str(a), 1 = str(b),  ), arg2 = block( func( name = str(return), arg0 = func( name = str(+), arg0 = str(a), arg1 = str(b),  ),  ),  ),  )");
+    delete e;
 }
 
 TEST_CASE ("Parser parsing get and set expressions", "[parser]")
@@ -177,6 +181,7 @@ TEST_CASE ("Parser parsing get and set expressions", "[parser]")
     Parser p(l);
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "func( name = str(set), arg0 = str(abc), arg1 = func( name = str(*), arg0 = str(2), arg1 = func( name = str(get), arg0 = str(x),  ),  ),  )");
+    delete e;
 }
 
 TEST_CASE ("Parser parsing elements", "[parser]")
@@ -185,6 +190,7 @@ TEST_CASE ("Parser parsing elements", "[parser]")
     Parser p(l);
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "func( name = str(set), arg0 = str(a), arg1 = element( elname = div, args = (  ), children = (element( elname = example, args = (  ), children = ( )),  )),  )");
+    delete e;
 }
 
 TEST_CASE ("Parser parsing attributes", "[parser]")
@@ -193,6 +199,7 @@ TEST_CASE ("Parser parsing attributes", "[parser]")
     Parser p(l);
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "func( name = str(set), arg0 = str(el), arg1 = element( elname = span, args = ( attr1 = str(val1); attr2 = func( name = str(get), arg0 = str(x),  ); attr3 = func( name = str(func), arg0 = str(x),  ); attr4 = block( func( name = str(func), arg0 = str(x),  ),  );  ), children = ( )),  )");
+    delete e;
 }
 
 TEST_CASE ("Parser parsing text nodes", "[parser][!mayfail]")
@@ -201,6 +208,26 @@ TEST_CASE ("Parser parsing text nodes", "[parser][!mayfail]")
     Parser p(l);
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "Unknown. TODO");
+    delete e;
+}
+
+TEST_CASE ("WebF_Number basic arithmetic", "[std_lib][webf_num]")
+{
+    WebF_Number* n1 = new WebF_Number(22.0);
+    WebF_Number* n2 = new WebF_Number(-8.0);
+    auto args = new std::vector<IWebF_Type*>();
+    args->push_back(n2);
+    WebF_Number* res = dynamic_cast<WebF_Number*>(n1->invokeMethod("+", args));
+    REQUIRE(res->getnum() == 14.0); // Integer values used because of errors when comparing FP values
+    res = dynamic_cast<WebF_Number*>(n1->invokeMethod("-", args));
+    REQUIRE(res->getnum() == 30.0);
+    res = dynamic_cast<WebF_Number*>(n1->invokeMethod("*", args));
+    REQUIRE(res->getnum() == -176.0);
+    res = dynamic_cast<WebF_Number*>(n1->invokeMethod("/", args));
+    REQUIRE(res->getnum() == -2.75);
+    delete n1;
+    delete n2;
+    delete res;
 }
 
 // Handle exception throwing tests

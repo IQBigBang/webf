@@ -6,3 +6,5 @@
 # generated directories
 bin/
 obj/
+### VSCode ###
+.vscode/

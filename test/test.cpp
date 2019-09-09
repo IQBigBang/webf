@@ -2,12 +2,13 @@
 #include "catch.hpp"
 #define WEBF_TESTING // Makes all members public in Lexer and Parser
 #include "Lexer.h"
-#include "AST.h"
+#include "INode.h"
 #include "Parser.h"
 #include "WebF_Type.h"
 #include "Runtime.h"
 #include "WebF_String.hpp"
 #include "WebF_Number.hpp"
+#include "ExprNode.hpp"
 #include <iostream>
 
 TEST_CASE ("Lexer reads characters", "[lexer]")
@@ -71,7 +72,7 @@ TEST_CASE ("Lexer tokenizes html tokens", "[lexer]")
     REQUIRE(t.tval == "<");
     l.pos = 2;
     t = l.next();
-    REQUIRE(t.ttype == TAGCLOSINGEND);
+    REQUIRE(t.ttype == CLOSINGTAGEND);
     REQUIRE(t.tval == "/>");
     l.pos = 6;
     t = l.next();
@@ -83,7 +84,7 @@ TEST_CASE ("Lexer tokenizes html tokens", "[lexer]")
     REQUIRE(t.tval == "</");
 }
 
-TEST_CASE ("Lexer tokenizes quoted string", "[lexer]")
+TEST_CASE ("Lexer tokenizes string", "[lexer]")
 {
     Lexer l(" \"a b c-11 {} b\n\"  ");
     auto t = l.next();
@@ -92,23 +93,42 @@ TEST_CASE ("Lexer tokenizes quoted string", "[lexer]")
     REQUIRE(l.pos == 17);
 }
 
-TEST_CASE ("Lexer tokenizes string", "[lexer]")
+TEST_CASE ("Lexer tokenizes numbers", "[lexer]")
 {
-    Lexer l("set a_b12:ca4%X");
+    Lexer l("1.223 8.45.66");
     auto t = l.next();
-    REQUIRE(t.ttype == STRING);
-    REQUIRE(t.tval == "set");
-    REQUIRE(l.pos == 3);
+    REQUIRE(t.ttype == NUMBER);
+    REQUIRE(t.tval == "1.223");
+    REQUIRE(l.pos == 5);
     t = l.next();
-    REQUIRE(t.ttype == STRING);
-    REQUIRE(t.tval == "a_b12:ca4%X");
-    REQUIRE(l.pos == 15);
+    REQUIRE(t.ttype == NUMBER);
+    REQUIRE(t.tval == "8.45");
+    REQUIRE(l.pos == 10);
+    t = l.next();
+    REQUIRE(t.ttype == DOT);
+    t = l.next();
+    REQUIRE(t.ttype == NUMBER);
+    REQUIRE(t.tval == "66");
+    REQUIRE(l.pos == 13);
+}
+
+TEST_CASE ("Lexer tokenizes names", "[lexer]")
+{
+    Lexer l("hello ++:?");
+    auto t = l.next();
+    REQUIRE(t.ttype == NAME);
+    REQUIRE(t.tval == "hello");
+    REQUIRE(l.pos == 5);
+    t = l.next();
+    REQUIRE(t.ttype == NAME);
+    REQUIRE(t.tval == "++:?");
+    REQUIRE(l.pos == 10);
 }
 
 TEST_CASE ("Lexer 'peek' function", "[lexer]")
 {
     Lexer l1("set a b c");
-    REQUIRE(l1.peek(STRING));
+    REQUIRE(l1.peek(NAME));
     Lexer l2("( x )");
     REQUIRE(l2.peek(LPAREN));
     Lexer l3("$=x");
@@ -119,7 +139,7 @@ TEST_CASE ("Lexer 'peek next' function", "[lexer]")
 {
     Lexer l1("(a b c)");
     l1.peek(LPAREN);
-    REQUIRE(l1.peekNext(STRING));
+    REQUIRE(l1.peekNext(NAME));
     Lexer l2("$=x");
     REQUIRE(l2.peekNext(EQUAL));
 }
@@ -127,7 +147,7 @@ TEST_CASE ("Lexer 'peek next' function", "[lexer]")
 TEST_CASE ("Lexer 'eat' funtion", "[lexer]")
 {
     Lexer l("a.blah");
-    l.peek(STRING);
+    l.peek(NAME);
     REQUIRE(l.eat() == "a");
     REQUIRE(l.peek(DOT));
     REQUIRE(l.eat() == ".");
@@ -150,68 +170,73 @@ TEST_CASE ("Lexer fully working", "[lexer]")
     REQUIRE(l.expect(STRING) == "result");
     REQUIRE(l.peek(EQUAL));
     REQUIRE(l.peekNext(LPAREN));
-    l.eat();
+    l.eat(); // EQUAL
     l.expect(LPAREN);
-    REQUIRE(l.peek(STRING));
+    REQUIRE(l.peek(NAME));
     REQUIRE(l.eat() == "+");
-    REQUIRE(l.expect(STRING) == "2");
+    REQUIRE(l.expect(NUMBER) == "2");
 }
 
 TEST_CASE ("Parser parsing simple expressions", "[parser]")
 {
-    Lexer l("(print a)");
+    Lexer l("(print \"Hello world\")");
     Parser p(l);
     ExprNode* e = p.parse_expr();
-    REQUIRE(e->repr() == "func( name = str(print), arg0 = str(a),  )");
-    delete e;
+    REQUIRE(e->repr() == "func( f = var( print ), arg0 = str(Hello world),  )");
 }
 
 TEST_CASE ("Parser parsing simple lists and blocks", "[parser]")
 {
-    Lexer l("(def add [a b] { (return (+ a b)) })");
+    Lexer l("(blah [1 2 blah] {(a 3) (b 2)})");
     Parser p(l);
     ExprNode* e = p.parse_expr();
-    REQUIRE(e->repr() == "func( name = str(def), arg0 = str(add), arg1 = list( 0 = str(a), 1 = str(b),  ), arg2 = block( func( name = str(return), arg0 = func( name = str(+), arg0 = str(a), arg1 = str(b),  ),  ),  ),  )");
-    delete e;
+    REQUIRE(e->repr() == "func( f = var( blah ), arg0 = list( 0 = num(1), 1 = num(2), 2 = var( blah ),  ), arg1 = block( func( f = var( a ), arg0 = num(3),  ), func( f = var( b ), arg0 = num(2),  ),  ),  )");
 }
 
-TEST_CASE ("Parser parsing get and set expressions", "[parser]")
+TEST_CASE ("Parser parsing get and vardef expressions", "[parser]")
 {
-    Lexer l("(abc= (* 2 $x))");
+    Lexer l("(args= [$a $b])");
     Parser p(l);
     ExprNode* e = p.parse_expr();
-    REQUIRE(e->repr() == "func( name = str(set), arg0 = str(abc), arg1 = func( name = str(*), arg0 = str(2), arg1 = func( name = str(get), arg0 = str(x),  ),  ),  )");
-    delete e;
+    REQUIRE(e->repr() == "func( f = var( set ), arg0 = vardef( args ), arg1 = list( 0 = vardef( a ), 1 = vardef( b ),  ),  )");
 }
+
+TEST_CASE ("Parser parsing member access", "[parser]")
+{
+    Lexer l("(inlen= (io.readline).len)");
+    Parser p(l);
+    ExprNode* e = p.parse_expr(); 
+    REQUIRE(e->repr() == "func( f = var( set ), arg0 = vardef( inlen ), arg1 = member( object = func( f = member( object = var( io ), name = readline ),  ), name = len ),  )");
+}
+
 
 TEST_CASE ("Parser parsing elements", "[parser]")
 {
-    Lexer l("(set a (<div><example /></div>))");
+    Lexer l("(set $a <div><example /></div>)");
     Parser p(l);
     ExprNode* e = p.parse_expr();
-    REQUIRE(e->repr() == "func( name = str(set), arg0 = str(a), arg1 = element( elname = div, args = (  ), children = (element( elname = example, args = (  ), children = ( )),  )),  )");
-    delete e;
+    REQUIRE(e->repr() == "func( f = var( set ), arg0 = vardef( a ), arg1 = element( elname = div, args = (  ), children = (element( elname = example, args = (  ), children = ( )),  )),  )");
 }
 
 TEST_CASE ("Parser parsing attributes", "[parser]")
 {
-    Lexer l("(set el (<span attr1=\"val1\" attr2=$x attr3=$(func x) attr4={(func x)}/>))");
+    Lexer l("(set $el <span attr1=\"Static value\" attr2=varval attr3=(call.f 1 2) />)");
     Parser p(l);
     ExprNode* e = p.parse_expr();
-    REQUIRE(e->repr() == "func( name = str(set), arg0 = str(el), arg1 = element( elname = span, args = ( attr1 = str(val1); attr2 = func( name = str(get), arg0 = str(x),  ); attr3 = func( name = str(func), arg0 = str(x),  ); attr4 = block( func( name = str(func), arg0 = str(x),  ),  );  ), children = ( )),  )");
-    delete e;
+    REQUIRE(e->repr() == "func( f = var( set ), arg0 = vardef( el ), arg1 = element( elname = span, args = ( attr1 = str(Static value); attr2 = var( varval ); attr3 = func( f = member( object = var( call ), name = f ), arg0 = num(1), arg1 = num(2),  );  ), children = ( )),  )");
 }
 
-TEST_CASE ("Parser parsing text nodes", "[parser][!mayfail]")
+
+TEST_CASE ("Parser parsing text nodes", "[parser]")
 {
-    Lexer l("(set el (<span>Hello, $name ! You are 18 years old.</span>))");
+    Lexer l("(set el <span>Hello, $name ! You are X yo. <table><td/></table></span>)");
     Parser p(l);
     ExprNode* e = p.parse_expr();
-    REQUIRE(e->repr() == "Unknown. TODO");
-    delete e;
+    REQUIRE(e->repr() == "func( f = var( set ), arg0 = var( el ), arg1 = element( elname = span, args = (  ), children = (text( Hello, $name ! You are X yo.  ), element( elname = table, args = (  ), children = (element( elname = td, args = (  ), children = ( )),  )),  )),  )");
 }
 
-TEST_CASE ("WebF_Number basic arithmetic", "[std_lib][webf_num]")
+// WebF Types will be revamped
+/*TEST_CASE ("WebF_Number basic arithmetic", "[std_lib][webf_num]")
 {
     WebF_Number* n1 = new WebF_Number(22.0);
     WebF_Number* n2 = new WebF_Number(-8.0);
@@ -228,6 +253,15 @@ TEST_CASE ("WebF_Number basic arithmetic", "[std_lib][webf_num]")
     delete n1;
     delete n2;
     delete res;
-}
 
+}
+*/
+
+TEST_CASE ("Parser fully working", "[parser]")
+{
+    Lexer l("(def $render [$x] {(el= <div id=\"el\">%x</div>) (return (el.render))})");
+    Parser p(l);
+    ExprNode* e = p.parse_expr();
+    REQUIRE(e->repr() == "func( f = var( def ), arg0 = vardef( render ), arg1 = list( 0 = vardef( x ),  ), arg2 = block( func( f = var( set ), arg0 = vardef( el ), arg1 = element( elname = div, args = ( id = str(el);  ), children = (text( %x ),  )),  ), func( f = var( return ), arg0 = func( f = member( object = var( el ), name = render ),  ),  ),  ),  )");
+}
 // Handle exception throwing tests

@@ -6,6 +6,8 @@
 #include "Parser.h"
 #include "WebF_Type.h"
 #include "Runtime.h"
+#include "WebF_String.hpp"
+#include "WebF_Number.hpp"
 #include "ExprNode.hpp"
 #include <iostream>
 
@@ -232,6 +234,28 @@ TEST_CASE ("Parser parsing text nodes", "[parser]")
     ExprNode* e = p.parse_expr();
     REQUIRE(e->repr() == "func( f = var( set ), arg0 = var( el ), arg1 = element( elname = span, args = (  ), children = (text( Hello, $name ! You are X yo.  ), element( elname = table, args = (  ), children = (element( elname = td, args = (  ), children = ( )),  )),  )),  )");
 }
+
+// WebF Types will be revamped
+/*TEST_CASE ("WebF_Number basic arithmetic", "[std_lib][webf_num]")
+{
+    WebF_Number* n1 = new WebF_Number(22.0);
+    WebF_Number* n2 = new WebF_Number(-8.0);
+    auto args = new std::vector<IWebF_Type*>();
+    args->push_back(n2);
+    WebF_Number* res = dynamic_cast<WebF_Number*>(n1->invokeMethod("+", args));
+    REQUIRE(res->getnum() == 14.0); // Integer values used because of errors when comparing FP values
+    res = dynamic_cast<WebF_Number*>(n1->invokeMethod("-", args));
+    REQUIRE(res->getnum() == 30.0);
+    res = dynamic_cast<WebF_Number*>(n1->invokeMethod("*", args));
+    REQUIRE(res->getnum() == -176.0);
+    res = dynamic_cast<WebF_Number*>(n1->invokeMethod("/", args));
+    REQUIRE(res->getnum() == -2.75);
+    delete n1;
+    delete n2;
+    delete res;
+
+}
+*/
 
 TEST_CASE ("Parser fully working", "[parser]")
 {

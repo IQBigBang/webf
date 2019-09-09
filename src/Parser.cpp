@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include "ExceptionHandler.h"
 #include "Lexer.h"
 #include "INode.h"
 // Nodes
@@ -125,8 +126,7 @@ ElementNode* Parser::parse_element()
     this->l.expect(CLOSINGTAGSTART);
     std::string closingTagName = this->l.expect(NAME);
     if (closingTagName != elname) {
-        std::cout << "Tag names are not equal" << std::endl;
-        throw 113;
+        ExceptionHandler::throwException(ExceptionType::TagNamesNotEqual);
     }
     this->l.expect(TAGEND);
     return new ElementNode(elname, attrs, children);

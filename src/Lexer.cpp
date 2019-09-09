@@ -1,4 +1,6 @@
 #include "Lexer.h"
+#include "ExceptionHandler.h"
+#include <sstream>
 
 Lexer::Lexer(std::string code)
 {
@@ -164,9 +166,10 @@ std::string Lexer::eat()
 std::string Lexer::expect(TType expected_type)
 {
     if (!this->peek(expected_type)) {
-        std::cout << "Unexpected token at " << this->lineno << ", " << this->linepos << std::endl;
-        std::cout << "Expected " << expected_type << " but found " << this->currentT.ttype << std::endl;
-        throw 102; // TODO: Make exceptions list
+        std::stringstream ss;
+        ss << "Unexpected token at " + this->lineno << ", " << this->linepos << std::endl;
+        ss << "Expected " << expected_type << " but found " << this->currentT.ttype;
+        ExceptionHandler::throwException(ExceptionType::UnexpectedToken, ss.str());
     }
     return this->eat();
 }

@@ -7,7 +7,7 @@ class VariableNode : public INode
 {
 public:
     VariableNode( std::string varName) : varName(varName) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }

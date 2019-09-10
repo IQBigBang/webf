@@ -8,7 +8,7 @@ class ExprNode : public INode
 {
 public:
     ExprNode(INode* func, std::vector<INode*> *args) : func(func), args(args) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }

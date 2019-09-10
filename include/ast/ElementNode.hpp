@@ -10,7 +10,7 @@ class ElementNode : public INode
 public:
     ElementNode(std::string elname, std::map<std::string, INode*> *attributes, std::vector<ElementNode*> *children)
         : elname(elname), attributes(attributes), children(children) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }
@@ -43,7 +43,7 @@ class TextNode : public ElementNode
 {
 public:
     TextNode(std::string txt) : ElementNode("$" + txt, new std::map<std::string, INode*>(), new std::vector<ElementNode*>()) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }

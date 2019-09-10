@@ -9,7 +9,7 @@
 class INode
 {
 public:
-    virtual WebF_Type* execute(Runtime& r) = 0;
+    virtual IWebF_Type* execute(Runtime& r) = 0;
     virtual std::string repr() = 0;
 };
 

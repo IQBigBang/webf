@@ -1,3 +1,4 @@
+*.temp
 ### CodeBlocks ###
 # specific to CodeBlocks IDE
 *.layout

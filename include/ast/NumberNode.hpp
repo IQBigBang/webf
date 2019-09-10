@@ -7,7 +7,7 @@ class NumberNode : public INode
 {
 public:
     NumberNode(double d) : d(d) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
 
     }

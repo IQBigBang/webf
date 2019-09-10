@@ -9,7 +9,7 @@ class BlockNode : public INode
 {
 public:
     BlockNode(std::vector<ExprNode*> *contents) : contents(contents) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }

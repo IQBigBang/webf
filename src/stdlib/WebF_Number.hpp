@@ -1,4 +1,4 @@
-#ifndef WEBF_NUMBER_H
+/*#ifndef WEBF_NUMBER_H
 #define WEBF_NUMBER_H
 
 #include "WebF_Type.h"
@@ -12,7 +12,7 @@ public:
 
     bool implementsInterface(std::string iName)
     {
-        return (iName == "iAddable" || iName == "iAlgebraic");
+        return (iName == "iAlgebraic" || iName == "iCastable<num>" || iName == "iCastable<str>");
     }
 
     std::string getType()
@@ -26,7 +26,7 @@ public:
                  || methodName == "-" || methodName == "sub"
                  || methodName == "*" || methodName == "mul"
                  || methodName == "/" || methodName == "div"
-                 || methodName == "_cast_to_str" || methodName == "_cast_to_num");
+                 || methodName == "cast_str" || methodName == "cast_num");
     }
 
     IWebF_Type* invokeMethod(std::string methodName, std::vector<IWebF_Type*>* args)
@@ -35,8 +35,8 @@ public:
         {
             double res = this->d;
             for (IWebF_Type* a : *args) {
-                if (a->hasMethod("_cast_to_num"))
-                    res += (dynamic_cast<WebF_Number*>(a->invokeMethod("_cast_to_num", nullptr)))->getnum();
+                if (a->implementsInterface("iCastable<num>"))
+                    res += (dynamic_cast<WebF_Number*>(a->invokeMethod("cast_num", nullptr)))->getnum();
                 else ExceptionHandler::throwException(ExceptionType::MissingCast, "Missing cast to num");
 
             }
@@ -46,8 +46,8 @@ public:
         {
             double res = this->d;
             for (IWebF_Type* a : *args) {
-                if (a->hasMethod("_cast_to_num"))
-                    res -= (dynamic_cast<WebF_Number*>(a->invokeMethod("_cast_to_num", nullptr)))->getnum();
+                if (a->implementsInterface("iCastable<num>"))
+                    res -= (dynamic_cast<WebF_Number*>(a->invokeMethod("cast_num", nullptr)))->getnum();
                 else ExceptionHandler::throwException(ExceptionType::MissingCast, "Missing cast to num");
 
             }
@@ -57,8 +57,8 @@ public:
         {
             double res = this->d;
             for (IWebF_Type* a : *args) {
-                if (a->hasMethod("_cast_to_num"))
-                    res *= (dynamic_cast<WebF_Number*>(a->invokeMethod("_cast_to_num", nullptr)))->getnum();
+                if (a->implementsInterface("iCastable<num>"))
+                    res *= (dynamic_cast<WebF_Number*>(a->invokeMethod("cast_num", nullptr)))->getnum();
                 else ExceptionHandler::throwException(ExceptionType::MissingCast, "Missing cast to num");
 
             }
@@ -68,17 +68,17 @@ public:
         {
             double res = this->d;
             for (IWebF_Type* a : *args) {
-                if (a->hasMethod("_cast_to_num"))
-                    res /= (dynamic_cast<WebF_Number*>(a->invokeMethod("_cast_to_num", nullptr)))->getnum();
+                if (a->implementsInterface("iCastable<num>"))
+                    res /= (dynamic_cast<WebF_Number*>(a->invokeMethod("cast_num", nullptr)))->getnum();
                 else ExceptionHandler::throwException(ExceptionType::MissingCast, "Missing cast to num");
 
             }
             return new WebF_Number(res);
         }
-        if (methodName == "_cast_to_num") return this;
-/*        if (methodName == "_cast_to_str") return new WebF_String(std::to_string(this->d));
+        if (methodName == "cast_num") return this;
+        if (methodName == "cast_str") return new WebF_String(std::to_string(this->d));
         else ExceptionHandler::throwException(ExceptionType::NonexistentFunction,
-                                          "Method " + methodName + " on type " + this->getType() + " doesn't exist");*/
+                                          "Method " + methodName + " on type " + this->getType() + " doesn't exist");
     }
 
     double getnum()
@@ -91,3 +91,4 @@ private:
 };
 
 #endif // WEBF_NUMBER_H
+*/

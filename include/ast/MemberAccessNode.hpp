@@ -7,7 +7,7 @@ class MemberAccessNode : public INode
 {
 public:
     MemberAccessNode(INode* object, std::string memberName) : object(object), memberName(memberName) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }

@@ -31,7 +31,7 @@ class Parser
         INode* parse_object();
         /// atom = STRING | NUMBER | NAME | (DOLLAR, NAME) | expr | list | block | element
         INode* parse_atom();
-        /// element = (TAGSTART, NAME, {attr}, CLOSINGTAGEND) 
+        /// element = (TAGSTART, NAME, {attr}, CLOSINGTAGEND)
         ///         | (TAGSTART, NAME, {attr}, TAGEND, {text | element}, CLOSINGTAGSTART, NAME, TAGEND)
         ElementNode* parse_element();
         /// attr := NAME, EQUAL object

@@ -7,7 +7,7 @@ class StringNode : public INode
 {
 public:
     StringNode(std::string s) : s(s) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
         // TODO
     }

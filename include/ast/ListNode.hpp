@@ -8,7 +8,7 @@ class ListNode : public INode
 {
 public:
     ListNode(std::vector<INode*> *contents) : contents(contents) {}
-    WebF_Type* execute(Runtime& r)
+    IWebF_Type* execute(Runtime& r)
     {
 
     }

@@ -2,7 +2,11 @@
 #define PARSER_H
 
 #include <memory>
-#include "AST.h"
+#include "INode.h"
+#include "ExprNode.hpp"
+#include "BlockNode.hpp"
+#include "ElementNode.hpp"
+#include "ListNode.hpp"
 #include "Lexer.h"
 
 class Parser
@@ -17,28 +21,21 @@ class Parser
     private:
     #endif
         Lexer& l;
-        /// expr := (LPAREN object(type=Function) EQUALS object RPAREN)
-        ///         | (LPAREN object {object} RPAREN)
+        /// expr = (LPAREN, object, {object}, RPAREN) | (LPAREN, object, EQUAL, object, RPAREN)
         ExprNode* parse_expr();
-        /// block := LBRACE {expr} RBRACE
+        /// block = LBRACE, {expr}, RBRACE
         BlockNode* parse_block();
-        /// list := LBRACKET {object} RBRACKET
+        ///list = LBRACKET, {object}, RBRACKET
         ListNode* parse_list();
-        /// object := factor [DOT STRING]
+        /// object = atom | (object, DOT, NAME)
         INode* parse_object();
-        /// factor := ([DOLLAR] STRING)
-        ///             | block
-        ///             | list
-        ///             | expr
-        ///             | (LPAREN element RPAREN)
-        INode* parse_factor();
-        /// element := (TAGSTART STRING {attr} TAGCLOSINGEND)
-        ///             | (TAGSTART STRING {attr} TAGEND {element_or_text} CLOSINGTAGSTART STRING TAGEND)
+        /// atom = STRING | NUMBER | NAME | (DOLLAR, NAME) | expr | list | block | element
+        INode* parse_atom();
+        /// element = (TAGSTART, NAME, {attr}, CLOSINGTAGEND)
+        ///         | (TAGSTART, NAME, {attr}, TAGEND, {text | element}, CLOSINGTAGSTART, NAME, TAGEND)
         ElementNode* parse_element();
-        /// attr := STRING EQUAL (STRING | (DOLLAR STRING) | (DOLLAR object) | (LBRACE expr RBRACE))
+        /// attr := NAME, EQUAL object
         std::pair<std::string, INode*>* parse_attr();
-        /// element_or_text := element | {STRING | (DOLLAR STRING) | (DOLLAR expr)}
-        ElementNode* parse_elortext();
 
 };
 

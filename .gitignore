@@ -1,3 +1,4 @@
+*.temp
 ### CodeBlocks ###
 # specific to CodeBlocks IDE
 *.layout
@@ -6,3 +7,5 @@
 # generated directories
 bin/
 obj/
+### VSCode ###
+.vscode/
